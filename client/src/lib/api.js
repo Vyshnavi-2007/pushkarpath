@@ -118,10 +118,21 @@ function getStaticFallback(endpoint, options = {}) {
     };
   }
   if (url.includes('/posters')) {
+    const code = url.split('/').pop() || 'PKG-01';
+    const lot = staticLots.find((l) => l.code === code) || staticLots[0];
+    const origin = window.location.origin;
+    const inCheckin = `${origin}/#/checkin?lot=${lot.code}&dir=in`;
+    const outCheckin = `${origin}/#/checkin?lot=${lot.code}&dir=out`;
     return {
-      lot: staticLots[0],
-      inPoster: { checkinUrl: window.location.origin + '/#/checkin?q=in' },
-      outPoster: { checkinUrl: window.location.origin + '/#/checkin?q=out' }
+      lot: { ...lot },
+      inPoster: {
+        checkinUrl: inCheckin,
+        qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inCheckin)}`
+      },
+      outPoster: {
+        checkinUrl: outCheckin,
+        qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(outCheckin)}`
+      }
     };
   }
   if (url.includes('/scans') || url.includes('/scan')) {

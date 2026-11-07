@@ -133,9 +133,31 @@ export default function Volunteer() {
     };
   }, [selectedLotCode]);
 
+  // Safe active posters and lot fallback
+  const effectiveLot = lot || {
+    code: selectedLotCode,
+    name: 'Pushkar Ghat Main Ground',
+    sector: 'Pushkar Core Sector',
+    category: 'open',
+    capacity: 350,
+    occupied: 320
+  };
+
+  const activePosters = posters || {
+    lot: effectiveLot,
+    inPoster: {
+      checkinUrl: `${window.location.origin}/#/checkin?lot=${selectedLotCode}&dir=in`,
+      qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/#/checkin?lot=${selectedLotCode}&dir=in`)}`
+    },
+    outPoster: {
+      checkinUrl: `${window.location.origin}/#/checkin?lot=${selectedLotCode}&dir=out`,
+      qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/#/checkin?lot=${selectedLotCode}&dir=out`)}`
+    }
+  };
+
   // Occupancy calculations
-  const capacity = lot?.capacity || 200;
-  const occupied = lot?.occupied || 0;
+  const capacity = effectiveLot.capacity || 200;
+  const occupied = effectiveLot.occupied || 0;
   const free = Math.max(0, capacity - occupied);
   const occupancyPercent = Math.min(100, Math.round((occupied / capacity) * 100));
 
@@ -228,7 +250,7 @@ export default function Volunteer() {
             </button>
           </div>
 
-          {posters ? (
+          {activePosters ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-1 print:gap-8">
               {/* IN Poster (Green Border) */}
               <div className="border-4 border-emerald-600 rounded-3xl p-6 sm:p-8 text-center space-y-4 bg-emerald-50/20 shadow-md flex flex-col items-center print:border-4 print:page-break-after">
@@ -241,18 +263,18 @@ export default function Volunteer() {
                     Godavari Pushkaralu 2027 • Rajamahendravaram
                   </div>
                   <h3 className="font-heading font-extrabold text-2xl text-stone-900">
-                    {posters.lot?.name}
+                    {activePosters.lot?.name}
                   </h3>
                   <div className="text-xs font-mono font-bold text-stone-600">
-                    LOT CODE: {posters.lot?.code} • CAPACITY: {posters.lot?.capacity}
+                    LOT CODE: {activePosters.lot?.code} • CAPACITY: {activePosters.lot?.capacity}
                   </div>
                 </div>
 
                 {/* QR Code */}
                 <div className="p-4 bg-white rounded-2xl border-2 border-emerald-500 shadow-sm">
-                  {posters.inPoster?.qrDataUrl ? (
+                  {activePosters.inPoster?.qrDataUrl ? (
                     <img
-                      src={posters.inPoster.qrDataUrl}
+                      src={activePosters.inPoster.qrDataUrl}
                       alt="IN Entry QR Poster"
                       className="w-64 h-64 mx-auto object-contain"
                     />
@@ -274,12 +296,12 @@ export default function Volunteer() {
 
                 <div className="w-full pt-2">
                   <a
-                    href={posters.inPoster?.checkinUrl}
+                    href={activePosters.inPoster?.checkinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block text-xs font-mono text-emerald-700 bg-emerald-100/60 py-2 px-3 rounded-lg hover:underline truncate"
                   >
-                    Direct URL: {posters.inPoster?.checkinUrl}
+                    Direct URL: {activePosters.inPoster?.checkinUrl}
                   </a>
                 </div>
 
@@ -322,18 +344,18 @@ export default function Volunteer() {
                     Godavari Pushkaralu 2027 • Rajamahendravaram
                   </div>
                   <h3 className="font-heading font-extrabold text-2xl text-stone-900">
-                    {posters.lot?.name}
+                    {activePosters.lot?.name}
                   </h3>
                   <div className="text-xs font-mono font-bold text-stone-600">
-                    LOT CODE: {posters.lot?.code} • EXIT BARRIER
+                    LOT CODE: {activePosters.lot?.code} • EXIT BARRIER
                   </div>
                 </div>
 
                 {/* QR Code */}
                 <div className="p-4 bg-white rounded-2xl border-2 border-rose-500 shadow-sm">
-                  {posters.outPoster?.qrDataUrl ? (
+                  {activePosters.outPoster?.qrDataUrl ? (
                     <img
-                      src={posters.outPoster.qrDataUrl}
+                      src={activePosters.outPoster.qrDataUrl}
                       alt="OUT Exit QR Poster"
                       className="w-64 h-64 mx-auto object-contain"
                     />
@@ -355,12 +377,12 @@ export default function Volunteer() {
 
                 <div className="w-full pt-2">
                   <a
-                    href={posters.outPoster?.checkinUrl}
+                    href={activePosters.outPoster?.checkinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block text-xs font-mono text-rose-700 bg-rose-100/60 py-2 px-3 rounded-lg hover:underline truncate"
                   >
-                    Direct URL: {posters.outPoster?.checkinUrl}
+                    Direct URL: {activePosters.outPoster?.checkinUrl}
                   </a>
                 </div>
 

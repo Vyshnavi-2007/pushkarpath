@@ -59,15 +59,8 @@ export default function App() {
         }
       />
 
-      {/* Volunteer Portal (Protected for on-ground staff) */}
-      <Route
-        path="/volunteer"
-        element={
-          <ProtectedRoute allowedRoles={['staff', 'admin']}>
-            <Volunteer />
-          </ProtectedRoute>
-        }
-      />
+      {/* Volunteer Portal (Staff & Official Console) */}
+      <Route path="/volunteer" element={<Volunteer />} />
 
       {/* Admin Portal (Protected for central control admin) */}
       <Route
