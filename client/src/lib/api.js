@@ -79,8 +79,56 @@ function getStaticFallback(endpoint, options = {}) {
     return [
       { id: 'vja', name: 'Vijayawada', nameTe: 'విజయవాడ', distanceKm: 158 },
       { id: 'vzg', name: 'Visakhapatnam', nameTe: 'విశాఖపట్నం', distanceKm: 192 },
-      { id: 'hyd', name: 'Hyderabad', nameTe: 'హైదరాబాద్', distanceKm: 435 }
+      { id: 'hyd', name: 'Hyderabad', nameTe: 'హైదరాబాద్', distanceKm: 435 },
+      { id: 'kkd', name: 'Kakinada', nameTe: 'కాకినాడ', distanceKm: 64 },
+      { id: 'elr', name: 'Eluru', nameTe: 'ఏలూరు', distanceKm: 104 }
     ];
+  }
+  if (url === '/api/map/route') {
+    const body = options.body ? JSON.parse(options.body) : {};
+    const from = body.from || { lat: 17.0005, lng: 81.7838 };
+    const to = body.to || { lat: 17.0041, lng: 81.7762 };
+    const midLat = (from.lat + to.lat) / 2;
+    const midLng = (from.lng + to.lng) / 2;
+    return {
+      success: true,
+      distanceKm: 2.4,
+      durationMin: 7,
+      profile: body.profile || 'driving',
+      polyline: [
+        [from.lat, from.lng],
+        [midLat + 0.001, midLng - 0.001],
+        [midLat, midLng],
+        [to.lat, to.lng]
+      ],
+      steps: [
+        { instruction: 'Head toward Pushkaralu Corridor road', distanceMeters: 800, durationSec: 150 },
+        { instruction: 'Turn left onto Riverfront bypass', distanceMeters: 1100, durationSec: 200 },
+        { instruction: 'Arrive at designated parking zone', distanceMeters: 500, durationSec: 70 }
+      ],
+      alternatives: []
+    };
+  }
+  if (url === '/api/map/search') {
+    return {
+      results: [
+        ...FALLBACK_GHATS.map((g) => ({ ...g, type: 'ghat', id: 'ghat-' + g.code })),
+        ...staticLots.map((l) => ({ ...l, type: 'lot', id: 'lot-' + l.code, available: Math.max(0, l.capacity - l.occupied) }))
+      ]
+    };
+  }
+  if (url.includes('/posters')) {
+    return {
+      lot: staticLots[0],
+      inPoster: { checkinUrl: window.location.origin + '/#/checkin?q=in' },
+      outPoster: { checkinUrl: window.location.origin + '/#/checkin?q=out' }
+    };
+  }
+  if (url.includes('/scans') || url.includes('/scan')) {
+    return [];
+  }
+  if (url.includes('/pilgrims')) {
+    return [];
   }
   return undefined;
 }
