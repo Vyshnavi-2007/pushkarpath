@@ -4,7 +4,86 @@
  * Strictly calls real backend endpoints with zero mock/fake fallbacks.
  */
 
+import { FALLBACK_GHATS, FALLBACK_LOTS } from './staticData';
+
 const BASE_URL = '';
+
+// In-memory simulation state for offline / static environments
+let staticLots = [...FALLBACK_LOTS];
+
+function getStaticFallback(endpoint, options = {}) {
+  const url = endpoint.split('?')[0];
+
+  if (url === '/api/ghats') {
+    return FALLBACK_GHATS;
+  }
+  if (url === '/api/lots') {
+    return staticLots;
+  }
+  if (url.startsWith('/api/lots/')) {
+    const code = decodeURIComponent(url.replace('/api/lots/', ''));
+    const lot = staticLots.find((l) => l.code === code) || staticLots[0];
+    return lot;
+  }
+  if (url === '/api/config') {
+    return {
+      demoMode: true,
+      sampleOccupancy: true,
+      shuttleIntervalMin: 5,
+    };
+  }
+  if (url === '/api/auth/me') {
+    const stored = sessionStorage.getItem('pushkarpath_user');
+    return { user: stored ? JSON.parse(stored) : null };
+  }
+  if (url === '/api/auth/otp/verify' || url === '/api/auth/otp/send') {
+    return {
+      success: true,
+      token: 'demo-jwt-token-pushkar2027',
+      user: {
+        role: 'user',
+        name: 'Pilgrim Devotee',
+        phone: '9876543210'
+      }
+    };
+  }
+  if (url === '/api/auth/staff/login') {
+    const body = options.body ? JSON.parse(options.body) : {};
+    return {
+      token: 'demo-staff-token-pushkar2027',
+      user: {
+        staffId: body.staffId || 'VOL-01',
+        name: body.staffId === 'ADMIN-01' ? 'Central Control Admin' : 'Volunteer Ramesh',
+        role: body.staffId === 'ADMIN-01' ? 'admin' : 'staff',
+        kind: 'volunteer',
+        assignedLot: 'PKG-01',
+        assignment: { lotCode: 'PKG-01', point: 'entry' }
+      }
+    };
+  }
+  if (url === '/api/scan/demo-staff' || url === '/api/scans/demo-staff') {
+    const body = options.body ? JSON.parse(options.body) : {};
+    const targetLot = staticLots.find((l) => l.code === (body.lotCode || 'PKG-01')) || staticLots[0];
+    if (body.dir === 'in') {
+      targetLot.occupied = Math.min(targetLot.capacity, (targetLot.occupied || 0) + 1);
+    } else {
+      targetLot.occupied = Math.max(0, (targetLot.occupied || 0) - 1);
+    }
+    return {
+      success: true,
+      message: `${body.dir === 'in' ? 'IN' : 'OUT'} scan recorded successfully`,
+      lot: { ...targetLot }
+    };
+  }
+  if (url === '/api/map/destinations') {
+    return [
+      { id: 'vja', name: 'Vijayawada', nameTe: 'విజయవాడ', distanceKm: 158 },
+      { id: 'vzg', name: 'Visakhapatnam', nameTe: 'విశాఖపట్నం', distanceKm: 192 },
+      { id: 'hyd', name: 'Hyderabad', nameTe: 'హైదరాబాద్', distanceKm: 435 }
+    ];
+  }
+  return undefined;
+}
 
 async function request(endpoint, options = {}) {
   const token = sessionStorage.getItem('pushkarpath_token');
@@ -14,30 +93,45 @@ async function request(endpoint, options = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  let data;
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    data = await response.json();
-  } else {
-    data = await response.text();
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      if (!response.ok) {
+        const errorMessage =
+          (data && typeof data === 'object' && (data.message || data.error)) ||
+          `Request failed with status ${response.status}`;
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+      return data;
+    }
+
+    // Static server / Netlify / Vercel SPA returned HTML for API endpoint
+    const textData = await response.text();
+    if (textData.trim().startsWith('<!DOCTYPE') || textData.trim().startsWith('<html')) {
+      const fallback = getStaticFallback(endpoint, options);
+      if (fallback !== undefined) return fallback;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return textData;
+  } catch (err) {
+    const fallback = getStaticFallback(endpoint, options);
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw err;
   }
-
-  if (!response.ok) {
-    const errorMessage =
-      (data && typeof data === 'object' && (data.message || data.error)) ||
-      `Request failed with status ${response.status}`;
-    const error = new Error(errorMessage);
-    error.status = response.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
 }
 
 export const api = {

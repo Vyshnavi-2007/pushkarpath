@@ -164,6 +164,8 @@ function shutdown(signal) {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
 
 module.exports = { app, server };
