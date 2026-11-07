@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@theme {
+  --color-maroon: #7A1424;
+  --color-maroon-dark: #580E1A;
+  --color-maroon-light: #941B2D;
+  --color-maroon-50: #FDF3F4;
+  --color-marigold: #F29F05;
+  --color-marigold-hover: #D98D04;
+  --color-marigold-50: #FEF8EC;
+  --color-turmeric: #F6C945;
+  --color-turmeric-light: #FEF9E7;
+  --color-turmeric-50: #FFFDF5;
+  --color-teal: #0F5C5C;
+  --color-teal-dark: #0A3D3D;
+  --color-teal-light: #167D7D;
+  --color-teal-50: #F0F7F7;
+  --color-sandal: #F7EEDF;
+  --color-sandal-dark: #E6D5BD;
+  --color-sandal-light: #FAF5EC;
+  --color-sandal-50: #FDFBF8;
+
+  --font-heading: 'Tiro Telugu', serif;
+  --font-body: 'Hind Guntur', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Hind Guntur', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root {
+  --maroon: #7A1424;
+  --marigold: #F29F05;
+  --turmeric: #F6C945;
+  --teal: #0F5C5C;
+  --sandal: #F7EEDF;
+  font-family: 'Hind Guntur', sans-serif;
+}
+
+h1, h2, h3, .font-heading {
+  font-family: 'Tiro Telugu', serif;
+}
+
+/* Accessible focus outline */
+*:focus-visible {
+  outline: 2px solid #F29F05 !important;
+  outline-offset: 2px !important;
+}
+
+/* Mango Leaf Toranam Decorative Border under Header */
+.toranam-border {
+  height: 16px;
+  width: 100%;
+  background-repeat: repeat-x;
+  background-size: 32px 16px;
+  background-position: top center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 16' width='32' height='16'%3E%3Cpath d='M0,1 C8,3 24,3 32,1' stroke='%23F6C945' stroke-width='2' fill='none'/%3E%3Cpath d='M0,2 C4,6 8,12 16,16 C24,12 28,6 32,2 C25,6 20,10 16,11 C12,10 7,6 0,2 Z' fill='%237A1424'/%3E%3Cpath d='M8,3 C11,6 14,9 16,13 C18,9 21,6 24,3 C19,6 13,6 8,3 Z' fill='%23F6C945' opacity='0.9'/%3E%3Ccircle cx='16' cy='3' r='1.5' fill='%23F29F05'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.12));
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  font-family: inherit;
+}
+
+/* Pulsing GPS dot */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.user-gps-pulse {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.user-gps-pulse::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.4);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.user-gps-dot {
+  width: 16px;
+  height: 16px;
+  background: #2563eb;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Print styles for vehicle QR pass */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #printable-pass, #printable-pass * {
+    visibility: visible !important;
+  }
+  #printable-pass {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    background: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

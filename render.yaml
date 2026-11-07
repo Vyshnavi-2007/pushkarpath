@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: pushkarpath
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20.11.0"
+      - key: DEMO_MODE
+        value: "true"
+      - key: SHUTTLE_INTERVAL_MIN
+        value: "5"
+      - key: SEED_STAFF_PASSCODE
+        value: "pushkar2027"

@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment Variables
+.env
+server/.env
+client/.env
+
+# Build outputs
+# Note: Keep client/dist tracked or allow cloud build to build it
+# If deploying to Render/Railway, client/dist will be built by `npm run build`
+
+# Logs & Temporary
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+tmp-browser/
+scratch/
+
