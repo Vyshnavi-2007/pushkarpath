@@ -104,7 +104,7 @@ const ghats = [
     description: 'Prominent cultural and ritual zone near the central bazaar, frequented for traditional ancestor rituals and holy ablutions',
     location: { lat: 16.9942, lng: 81.7795 },
     coordSource: 'official',
-    photo: 'https://scontent.fvtz3-1.fna.fbcdn.net/v/t39.30808-6/484469826_2395616524124888_3483792433386016547_n.jpg?stp=dst-jpg_tt6&cstp=mx720x900&ctp=p600x600&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6376bf&_nc_ohc=_thnoJLAgGUQ7kNvwFeABmj&_nc_oc=AdrnDWxlPFVAI8ErTaVvq9-R5l8AyO3EjTUPfLuNWaJOGkBpVLJSaySK7GsJTQurSr4&_nc_zt=23&_nc_ht=scontent.fvtz3-1.fna&_nc_gid=YkEKPoiJQ8Uf2-QJIQFJJw&_nc_ss=7b20f&oh=00_AQRapPMp0znoFMgsAziMdfHYvYu5hXFo-mBysazOg5g_wg&oe=6AF4E368',
+    photo: '/photos/sradhananda-ghat.png',
     facilities: [
       'Bathing steps',
       'Pooja platform',
@@ -164,7 +164,7 @@ const ghats = [
     description: 'Serving the residential extension north of the center with spacious approaches, modern stairs, and low crowd density',
     location: { lat: 17.0120, lng: 81.7940 },
     coordSource: 'official',
-    photo: '/images/ghats/SNN.jpg',
+    photo: '/photos/narasimhanagar-ghat.png',
     facilities: [
       'Bathing steps',
       'Changing rooms',
