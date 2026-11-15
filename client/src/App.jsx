@@ -33,31 +33,10 @@ export default function App() {
       <Route path="/staff-login" element={<StaffLogin />} />
       <Route path="/checkin" element={<Checkin />} />
 
-      {/* Pilgrim Portal (Protected for pilgrims / users) */}
-      <Route
-        path="/pilgrim"
-        element={
-          <ProtectedRoute allowedRoles={['user', 'admin']}>
-            <Pilgrim />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/pilgrim/navigate"
-        element={
-          <ProtectedRoute allowedRoles={['user', 'admin']}>
-            <NavigatePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/pilgrim/navigate/:lotCode"
-        element={
-          <ProtectedRoute allowedRoles={['user', 'admin']}>
-            <NavigatePage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Pilgrim Portal */}
+      <Route path="/pilgrim" element={<Pilgrim />} />
+      <Route path="/pilgrim/navigate" element={<NavigatePage />} />
+      <Route path="/pilgrim/navigate/:lotCode" element={<NavigatePage />} />
 
       {/* Volunteer Portal (Staff & Official Console) */}
       <Route path="/volunteer" element={<Volunteer />} />

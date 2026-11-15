@@ -17,11 +17,21 @@ function getStaticFallback(endpoint, options = {}) {
   if (url === '/api/ghats') {
     return FALLBACK_GHATS;
   }
+  if (url.includes('/parking')) {
+    const parts = url.split('/');
+    const ghatCode = parts[3] || 'PKG';
+    const matching = staticLots.filter((l) => l.nearestGhat === ghatCode);
+    return matching.length > 0 ? matching : staticLots.slice(0, 4);
+  }
+  if (url.startsWith('/api/ghats/')) {
+    const code = decodeURIComponent(url.replace('/api/ghats/', '').split('/')[0]);
+    return FALLBACK_GHATS.find((g) => g.code === code) || FALLBACK_GHATS[0];
+  }
   if (url === '/api/lots') {
     return staticLots;
   }
   if (url.startsWith('/api/lots/')) {
-    const code = decodeURIComponent(url.replace('/api/lots/', ''));
+    const code = decodeURIComponent(url.replace('/api/lots/', '').split('/')[0]);
     const lot = staticLots.find((l) => l.code === code) || staticLots[0];
     return lot;
   }
@@ -31,6 +41,9 @@ function getStaticFallback(endpoint, options = {}) {
       sampleOccupancy: true,
       shuttleIntervalMin: 5,
     };
+  }
+  if (url === '/api/scan/me') {
+    return { activeCheckin: null };
   }
   if (url === '/api/auth/me') {
     const stored = sessionStorage.getItem('pushkarpath_user');
@@ -175,21 +188,25 @@ async function request(endpoint, options = {}) {
 
     // Static server / Netlify / Vercel SPA returned HTML for API endpoint
     const textData = await response.text();
-    if (textData.trim().startsWith('<!DOCTYPE') || textData.trim().startsWith('<html')) {
+    if (textData.trim().startsWith('<!DOCTYPE') || textData.trim().startsWith('<html') || !response.ok) {
       const fallback = getStaticFallback(endpoint, options);
       if (fallback !== undefined) return fallback;
+      if (endpoint.includes('parking') || endpoint.includes('scans') || endpoint.includes('lots') || endpoint.includes('ghats') || endpoint.includes('list') || endpoint.includes('destinations')) {
+        return [];
+      }
+      return {};
     }
 
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
     return textData;
   } catch (err) {
     const fallback = getStaticFallback(endpoint, options);
     if (fallback !== undefined) {
       return fallback;
     }
-    throw err;
+    if (endpoint.includes('parking') || endpoint.includes('scans') || endpoint.includes('lots') || endpoint.includes('ghats') || endpoint.includes('list') || endpoint.includes('destinations')) {
+      return [];
+    }
+    return {};
   }
 }
 
