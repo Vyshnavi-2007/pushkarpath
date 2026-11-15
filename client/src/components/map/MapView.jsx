@@ -57,10 +57,18 @@ export default function MapView({
   children,
   className = '',
 }) {
+  const safeCenter = (Array.isArray(center) && !isNaN(center[0]) && !isNaN(center[1]))
+    ? center
+    : [17.0005, 81.7800];
+
+  const safeBounds = (bounds && Array.isArray(bounds) && bounds.length >= 2)
+    ? bounds.filter(p => Array.isArray(p) && !isNaN(p[0]) && !isNaN(p[1]))
+    : null;
+
   return (
     <div className={`absolute inset-0 w-full h-full ${className}`}>
       <MapContainer
-        center={center}
+        center={safeCenter}
         zoom={zoom}
         minZoom={minZoom}
         maxZoom={maxZoom}
@@ -74,7 +82,7 @@ export default function MapView({
           maxZoom={19}
         />
         <MapResizer />
-        <RecenterMap center={center} zoom={zoom} bounds={bounds} />
+        <RecenterMap center={safeCenter} zoom={zoom} bounds={safeBounds && safeBounds.length >= 2 ? safeBounds : null} />
         {children}
       </MapContainer>
     </div>

@@ -420,8 +420,10 @@ export default function Pilgrim() {
 
   // Launch Full-Screen Navigation HUD
   const handleLaunchNavigation = (target, mode = 'driving', next = null, fromCoords = null) => {
-    const tLat = target.location?.lat ?? target.lat;
-    const tLng = target.location?.lng ?? target.lng;
+    const rawLat = target.location?.lat ?? target.lat;
+    const rawLng = target.location?.lng ?? target.lng;
+    const tLat = (typeof rawLat === 'number' && !isNaN(rawLat)) ? rawLat : 17.0005;
+    const tLng = (typeof rawLng === 'number' && !isNaN(rawLng)) ? rawLng : 81.7838;
     const params = new URLSearchParams({
       lat: tLat,
       lng: tLng,
@@ -431,7 +433,7 @@ export default function Pilgrim() {
     if (target.code) params.set('lotCode', target.code);
     if (next) params.set('next', next);
 
-    if (fromCoords) {
+    if (fromCoords && typeof fromCoords.lat === 'number' && !isNaN(fromCoords.lat)) {
       params.set('fromLat', fromCoords.lat);
       params.set('fromLng', fromCoords.lng);
       if (fromCoords.name) params.set('fromName', fromCoords.name);
@@ -508,19 +510,27 @@ export default function Pilgrim() {
 
   // Step 3: Draw driving route lot -> return destination (uses user's live position or parked lot)
   const handleSelectReturnDestination = async (dest) => {
-    setSelectedReturnDest(dest);
-    setReturnSearchQuery(dest.name || '');
+    const rawDestLat = dest.location?.lat ?? dest.lat;
+    const rawDestLng = dest.location?.lng ?? dest.lng;
+    const validDest = {
+      ...dest,
+      lat: (typeof rawDestLat === 'number' && !isNaN(rawDestLat)) ? rawDestLat : 16.5062,
+      lng: (typeof rawDestLng === 'number' && !isNaN(rawDestLng)) ? rawDestLng : 80.6480,
+      name: dest.name || 'Vijayawada',
+      highway: dest.highway || 'Corridor Highway',
+      distanceKm: dest.distanceKm || 120
+    };
+    setSelectedReturnDest(validDest);
+    setReturnSearchQuery(validDest.name || '');
     setReturnSearchResults([]);
 
     const startPos = effectiveUserCoords || (returnSourceLot ? {
-      lat: returnSourceLot.location?.lat ?? returnSourceLot.lat,
-      lng: returnSourceLot.location?.lng ?? returnSourceLot.lng,
+      lat: returnSourceLot.location?.lat ?? returnSourceLot.lat ?? 17.0005,
+      lng: returnSourceLot.location?.lng ?? returnSourceLot.lng ?? 81.7838,
       name: returnSourceLot.name
-    } : null);
+    } : { lat: 17.0005, lng: 81.7838, name: 'Rajahmundry' });
 
-    if (startPos) {
-      handleFetchRoute(dest, 'driving', startPos);
-    }
+    handleFetchRoute(validDest, 'driving', startPos);
   };
 
   // Reset entire journey
@@ -1737,13 +1747,13 @@ export default function Pilgrim() {
                               )}
                             </div>
                             <div className="text-[11px] text-stone-500 mt-0.5">
-                              Route via <strong className="text-stone-700">{city.highway}</strong>
+                              Route via <strong className="text-stone-700">{city.highway || 'Corridor Highway'}</strong>
                             </div>
                           </div>
 
                           <div className="text-right">
                             <span className="text-xs font-mono font-bold text-stone-800">
-                              ~{city.distanceKm} km
+                              ~{city.distanceKm || 120} km
                             </span>
                             <span className="block text-[10px] text-stone-400">Corridor</span>
                           </div>
@@ -1952,8 +1962,8 @@ export default function Pilgrim() {
                 {selectedReturnDest && (
                   <Marker
                     position={[
-                      selectedReturnDest.location?.lat ?? selectedReturnDest.lat,
-                      selectedReturnDest.location?.lng ?? selectedReturnDest.lng
+                      selectedReturnDest.location?.lat ?? selectedReturnDest.lat ?? 16.5062,
+                      selectedReturnDest.location?.lng ?? selectedReturnDest.lng ?? 80.6480
                     ]}
                     icon={destFlagIcon}
                   >

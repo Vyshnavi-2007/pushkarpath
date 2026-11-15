@@ -36,30 +36,49 @@ export default function RouteDisplay({
     iconAnchor: [16, 32],
   });
 
-  const destCoords =
-    destinationPoint ||
-    (route.polyline.length > 0 ? route.polyline[route.polyline.length - 1] : null);
+  const safePositions = (route?.polyline || []).filter(
+    (p) => Array.isArray(p) && typeof p[0] === 'number' && !isNaN(p[0]) && typeof p[1] === 'number' && !isNaN(p[1])
+  );
+
+  if (safePositions.length === 0) {
+    return null;
+  }
+
+  const rawDest =
+    (destinationPoint && Array.isArray(destinationPoint) && !isNaN(destinationPoint[0]) && !isNaN(destinationPoint[1]))
+      ? destinationPoint
+      : (safePositions.length > 0 ? safePositions[safePositions.length - 1] : null);
+
+  const destCoords = (rawDest && Array.isArray(rawDest) && !isNaN(rawDest[0]) && !isNaN(rawDest[1]))
+    ? rawDest
+    : null;
 
   return (
     <>
       {/* Alternative routes rendered in muted dashed lines */}
       {route.alternatives &&
-        route.alternatives.map((altPolyline, idx) => (
-          <Polyline
-            key={`alt-${idx}`}
-            positions={altPolyline}
-            pathOptions={{
-              color: '#9ca3af',
-              weight: 4,
-              dashArray: '6, 8',
-              opacity: 0.7,
-            }}
-          />
-        ))}
+        route.alternatives.map((altPolyline, idx) => {
+          const safeAlt = (altPolyline || []).filter(
+            (p) => Array.isArray(p) && !isNaN(p[0]) && !isNaN(p[1])
+          );
+          if (safeAlt.length < 2) return null;
+          return (
+            <Polyline
+              key={`alt-${idx}`}
+              positions={safeAlt}
+              pathOptions={{
+                color: '#9ca3af',
+                weight: 4,
+                dashArray: '6, 8',
+                opacity: 0.7,
+              }}
+            />
+          );
+        })}
 
       {/* Main active route with glowing underline and crisp main line */}
       <Polyline
-        positions={route.polyline}
+        positions={safePositions}
         pathOptions={{
           color: '#F29F05',
           weight: 8,
@@ -69,7 +88,7 @@ export default function RouteDisplay({
         }}
       />
       <Polyline
-        positions={route.polyline}
+        positions={safePositions}
         pathOptions={{
           color: '#0F5C5C',
           weight: 5,

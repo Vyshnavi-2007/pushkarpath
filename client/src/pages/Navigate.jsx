@@ -74,9 +74,11 @@ export default function Navigate() {
   const navigate = useNavigate();
 
   // Target coordinates and metadata
+  const parsedTargetLat = parseFloat(searchParams.get('lat'));
+  const parsedTargetLng = parseFloat(searchParams.get('lng'));
   const [target, setTarget] = useState({
-    lat: parseFloat(searchParams.get('lat') || '17.0005'),
-    lng: parseFloat(searchParams.get('lng') || '81.7838'),
+    lat: !isNaN(parsedTargetLat) ? parsedTargetLat : 17.0005,
+    lng: !isNaN(parsedTargetLng) ? parsedTargetLng : 81.7838,
     name: searchParams.get('name') || 'Destination',
     lotCode: lotCode || searchParams.get('lotCode') || ''
   });
@@ -469,6 +471,22 @@ export default function Navigate() {
     setIsScanModalOpen(false);
     sessionStorage.setItem('pushkarpath_shuttle_toast', '1');
     sessionStorage.setItem('pushkarpath_walk_route', '1');
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('pushkarpath_journey') || '{}');
+      if (nextAction === 'scan-out') {
+        sessionStorage.setItem('pushkarpath_journey', JSON.stringify({
+          ...saved,
+          step: 3
+        }));
+      } else {
+        sessionStorage.setItem('pushkarpath_journey', JSON.stringify({
+          ...saved,
+          step: 2,
+          lotCode: target.lotCode || saved.lotCode || 'PKG-01',
+          lastParkedLotCode: target.lotCode || saved.lotCode || 'PKG-01'
+        }));
+      }
+    } catch (e) {}
     navigate('/pilgrim');
   };
 
@@ -484,16 +502,18 @@ export default function Navigate() {
 
   // Determine current map center
   const activePosition = useMemo(() => {
-    if (demoDriveActive && simulatedPos) return simulatedPos;
-    if (cameraCenter) return cameraCenter;
-    if (effectiveStart) return [effectiveStart.lat, effectiveStart.lng];
-    return [target.lat, target.lng];
+    if (demoDriveActive && simulatedPos && !isNaN(simulatedPos[0]) && !isNaN(simulatedPos[1])) return simulatedPos;
+    if (cameraCenter && !isNaN(cameraCenter[0]) && !isNaN(cameraCenter[1])) return cameraCenter;
+    if (effectiveStart && !isNaN(effectiveStart.lat) && !isNaN(effectiveStart.lng)) return [effectiveStart.lat, effectiveStart.lng];
+    if (!isNaN(target.lat) && !isNaN(target.lng)) return [target.lat, target.lng];
+    return [17.0005, 81.7800];
   }, [demoDriveActive, simulatedPos, cameraCenter, effectiveStart, target]);
 
   // Current turn instruction
-  const currentInstruction = (route && route.instructions && route.instructions[stepIndex]) || {
-    text: `Proceed to ${target.name}`,
-    distanceM: remainingDistM
+  const rawInstruction = (route && route.instructions && route.instructions[stepIndex]) || (route && route.steps && route.steps[stepIndex]);
+  const currentInstruction = {
+    text: rawInstruction?.text || rawInstruction?.instruction || `Proceed to ${target.name}`,
+    distanceM: rawInstruction?.distanceM || rawInstruction?.distanceMeters || remainingDistM
   };
 
   // Live GPS Car Marker (follows real GPS when Demo Drive is OFF)

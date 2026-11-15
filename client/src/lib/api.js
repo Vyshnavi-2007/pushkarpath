@@ -43,6 +43,17 @@ function getStaticFallback(endpoint, options = {}) {
     };
   }
   if (url === '/api/scan/me') {
+    try {
+      const journey = JSON.parse(sessionStorage.getItem('pushkarpath_journey') || '{}');
+      if (journey.lotCode && !journey.returnCompleted) {
+        return {
+          activeCheckin: {
+            lotCode: journey.lotCode,
+            enteredAt: journey.enteredAt || new Date().toISOString()
+          }
+        };
+      }
+    } catch (e) {}
     return { activeCheckin: null };
   }
   if (url === '/api/auth/me') {
@@ -74,6 +85,71 @@ function getStaticFallback(endpoint, options = {}) {
       }
     };
   }
+  if (
+    url === '/api/scan/demo-checkin' ||
+    url === '/api/scans/demo-checkin' ||
+    url === '/api/scan/checkin' ||
+    url === '/api/scans/checkin' ||
+    url === '/api/scan'
+  ) {
+    const body = options.body ? JSON.parse(options.body) : {};
+    let lotCode = body.lotCode || 'PKG-01';
+    let dir = body.dir || 'in';
+
+    if (body.payload) {
+      const p = body.payload;
+      if (typeof p === 'object') {
+        lotCode = p.lot || p.lotCode || lotCode;
+        dir = p.dir || dir;
+      } else if (typeof p === 'string') {
+        try {
+          const parsed = JSON.parse(p);
+          lotCode = parsed.lot || parsed.lotCode || lotCode;
+          dir = parsed.dir || dir;
+        } catch {
+          if (p.includes('lot=')) {
+            lotCode = p.split('lot=')[1].split('&')[0];
+          }
+          if (p.includes('dir=')) {
+            dir = p.split('dir=')[1].split('&')[0];
+          }
+        }
+      }
+    }
+
+    const targetLot = staticLots.find((l) => l.code === lotCode) || staticLots[0];
+    if (dir === 'in') {
+      targetLot.occupied = Math.min(targetLot.capacity, (targetLot.occupied || 0) + 1);
+    } else {
+      targetLot.occupied = Math.max(0, (targetLot.occupied || 0) - 1);
+    }
+
+    // Keep journey storage updated
+    try {
+      const journey = JSON.parse(sessionStorage.getItem('pushkarpath_journey') || '{}');
+      if (dir === 'in') {
+        sessionStorage.setItem('pushkarpath_journey', JSON.stringify({
+          ...journey,
+          step: 2,
+          lotCode: targetLot.code,
+          lastParkedLotCode: targetLot.code,
+          enteredAt: new Date().toISOString()
+        }));
+      } else {
+        sessionStorage.setItem('pushkarpath_journey', JSON.stringify({
+          ...journey,
+          step: 3
+        }));
+      }
+    } catch (e) {}
+
+    return {
+      success: true,
+      message: `${dir === 'in' ? 'Check-in entry' : 'Check-out exit'} recorded successfully`,
+      lotCode: targetLot.code,
+      lot: { ...targetLot }
+    };
+  }
   if (url === '/api/scan/demo-staff' || url === '/api/scans/demo-staff') {
     const body = options.body ? JSON.parse(options.body) : {};
     const targetLot = staticLots.find((l) => l.code === (body.lotCode || 'PKG-01')) || staticLots[0];
@@ -90,43 +166,74 @@ function getStaticFallback(endpoint, options = {}) {
   }
   if (url === '/api/map/destinations') {
     return [
-      { id: 'vja', name: 'Vijayawada', nameTe: 'విజయవాడ', distanceKm: 158 },
-      { id: 'vzg', name: 'Visakhapatnam', nameTe: 'విశాఖపట్నం', distanceKm: 192 },
-      { id: 'hyd', name: 'Hyderabad', nameTe: 'హైదరాబాద్', distanceKm: 435 },
-      { id: 'kkd', name: 'Kakinada', nameTe: 'కాకినాడ', distanceKm: 64 },
-      { id: 'elr', name: 'Eluru', nameTe: 'ఏలూరు', distanceKm: 104 }
+      { id: 'vja', name: 'Vijayawada', nameTe: 'విజయవాడ', lat: 16.5062, lng: 80.6480, highway: 'NH-16 South', distanceKm: 158 },
+      { id: 'vzg', name: 'Visakhapatnam', nameTe: 'విశాఖపట్నం', lat: 17.6868, lng: 83.2185, highway: 'NH-16 North', distanceKm: 192 },
+      { id: 'hyd', name: 'Hyderabad', nameTe: 'హైదరాబాద్', lat: 17.3850, lng: 78.4867, highway: 'NH-65 West', distanceKm: 435 },
+      { id: 'kkd', name: 'Kakinada', nameTe: 'కాకినాడ', lat: 16.9891, lng: 82.2475, highway: 'ADB Road East', distanceKm: 64 },
+      { id: 'elr', name: 'Eluru', nameTe: 'ఏలూరు', lat: 16.7107, lng: 81.0952, highway: 'NH-16 South-West', distanceKm: 104 }
     ];
   }
   if (url === '/api/map/route') {
     const body = options.body ? JSON.parse(options.body) : {};
-    const from = body.from || { lat: 17.0005, lng: 81.7838 };
-    const to = body.to || { lat: 17.0041, lng: 81.7762 };
-    const midLat = (from.lat + to.lat) / 2;
-    const midLng = (from.lng + to.lng) / 2;
+    const from = body.from || {};
+    const to = body.to || {};
+    const fromLat = (typeof from.lat === 'number' && !isNaN(from.lat)) ? from.lat : 17.0005;
+    const fromLng = (typeof from.lng === 'number' && !isNaN(from.lng)) ? from.lng : 81.7838;
+    const toLat = (typeof to.lat === 'number' && !isNaN(to.lat)) ? to.lat : 17.0041;
+    const toLng = (typeof to.lng === 'number' && !isNaN(to.lng)) ? to.lng : 81.7762;
+
+    const midLat = (fromLat + toLat) / 2;
+    const midLng = (fromLng + toLng) / 2;
+    const q1Lat = (fromLat + midLat) / 2;
+    const q1Lng = (fromLng + midLng) / 2;
+    const q2Lat = (midLat + toLat) / 2;
+    const q2Lng = (midLng + toLng) / 2;
+
+    const polyline = [
+      [fromLat, fromLng],
+      [q1Lat + 0.0008, q1Lng - 0.0008],
+      [midLat, midLng],
+      [q2Lat - 0.0006, q2Lng + 0.0006],
+      [toLat, toLng]
+    ];
+
+    const instructions = [
+      { text: 'Head out toward designated corridor bypass road', instruction: 'Head out toward designated corridor bypass road', distanceM: 600, durationSec: 120 },
+      { text: 'Continue straight along festival traffic link', instruction: 'Continue straight along festival traffic link', distanceM: 1200, durationSec: 180 },
+      { text: 'Follow highway directional signs toward destination', instruction: 'Follow highway directional signs toward destination', distanceM: 1500, durationSec: 210 },
+      { text: 'Arrive safely at your destination', instruction: 'Arrive safely at your destination', distanceM: 400, durationSec: 60 }
+    ];
+
     return {
       success: true,
-      distanceKm: 2.4,
-      durationMin: 7,
+      distanceKm: 3.7,
+      durationMin: 12,
       profile: body.profile || 'driving',
-      polyline: [
-        [from.lat, from.lng],
-        [midLat + 0.001, midLng - 0.001],
-        [midLat, midLng],
-        [to.lat, to.lng]
-      ],
-      steps: [
-        { instruction: 'Head toward Pushkaralu Corridor road', distanceMeters: 800, durationSec: 150 },
-        { instruction: 'Turn left onto Riverfront bypass', distanceMeters: 1100, durationSec: 200 },
-        { instruction: 'Arrive at designated parking zone', distanceMeters: 500, durationSec: 70 }
-      ],
-      alternatives: []
+      polyline,
+      instructions,
+      steps: instructions,
+      alternatives: [
+        [
+          [fromLat, fromLng],
+          [midLat + 0.002, midLng + 0.002],
+          [toLat, toLng]
+        ]
+      ]
     };
   }
   if (url === '/api/map/search') {
+    const returnDests = [
+      { id: 'vja', name: 'Vijayawada', nameTe: 'విజయవాడ', lat: 16.5062, lng: 80.6480, highway: 'NH-16 South', distanceKm: 158, type: 'city' },
+      { id: 'vzg', name: 'Visakhapatnam', nameTe: 'విశాఖపట్నం', lat: 17.6868, lng: 83.2185, highway: 'NH-16 North', distanceKm: 192, type: 'city' },
+      { id: 'hyd', name: 'Hyderabad', nameTe: 'హైదరాబాద్', lat: 17.3850, lng: 78.4867, highway: 'NH-65 West', distanceKm: 435, type: 'city' },
+      { id: 'kkd', name: 'Kakinada', nameTe: 'కాకినాడ', lat: 16.9891, lng: 82.2475, highway: 'ADB Road East', distanceKm: 64, type: 'city' },
+      { id: 'elr', name: 'Eluru', nameTe: 'ఏలూరు', lat: 16.7107, lng: 81.0952, highway: 'NH-16 South-West', distanceKm: 104, type: 'city' }
+    ];
     return {
       results: [
         ...FALLBACK_GHATS.map((g) => ({ ...g, type: 'ghat', id: 'ghat-' + g.code })),
-        ...staticLots.map((l) => ({ ...l, type: 'lot', id: 'lot-' + l.code, available: Math.max(0, l.capacity - l.occupied) }))
+        ...staticLots.map((l) => ({ ...l, type: 'lot', id: 'lot-' + l.code, available: Math.max(0, l.capacity - l.occupied) })),
+        ...returnDests
       ]
     };
   }

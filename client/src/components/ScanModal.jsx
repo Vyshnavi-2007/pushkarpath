@@ -96,7 +96,7 @@ export default function ScanModal({
         setTimeout(() => {
           setSuccessData(null);
           onClose();
-        }, 1800);
+        }, 1000);
       } else {
         setError(res.error || 'Demo checkin failed.');
       }
@@ -129,9 +129,33 @@ export default function ScanModal({
 
         {/* Content */}
         <div className="p-5 space-y-4">
+          {/* Quick Demo 1-Click Action Card (Always visible and accessible) */}
+          <div className="bg-amber-50 border-2 border-amber-300 p-3 rounded-xl flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
+              <div>
+                <div className="text-xs font-bold text-stone-900">
+                  {expectedPoint === 'in' ? 'Demo Entry Gate' : 'Demo Exit Gate'}
+                </div>
+                <div className="text-[11px] text-stone-600">
+                  {lotCode || 'PKG-01'} • 1-Click {expectedPoint === 'in' ? 'Check-in' : 'Check-out'}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleDemoCheckin}
+              disabled={loading || Boolean(successData)}
+              className="py-2.5 px-4 bg-amber-400 hover:bg-amber-500 active:scale-95 text-stone-950 font-bold rounded-xl text-xs shadow-sm transition-all border border-amber-500 flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-maroon" />
+              <span>{expectedPoint === 'in' ? 'Demo IN' : 'Demo OUT'}</span>
+            </button>
+          </div>
+
           <p className="text-xs text-stone-600 leading-relaxed">
-            Point your camera at the official <strong>{expectedPoint === 'in' ? 'IN' : 'OUT'} QR Poster</strong> at{' '}
-            <strong>{lotCode || 'the parking ground'}</strong>.
+            Or point your camera at the printed <strong>{expectedPoint === 'in' ? 'IN' : 'OUT'} QR Poster</strong> at{' '}
+            <strong>{lotCode || 'the parking ground'}</strong>:
           </p>
 
           {/* Success banner */}
@@ -150,7 +174,7 @@ export default function ScanModal({
               <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div className="text-xs font-medium space-y-1">
                 <p className="font-bold">{error}</p>
-                <p className="text-rose-700">Please verify you are scanning the correct poster.</p>
+                <p className="text-rose-700">Please verify you are scanning the correct poster or click the Demo button above.</p>
               </div>
             </div>
           )}
@@ -163,28 +187,6 @@ export default function ScanModal({
                 <div className="flex items-center justify-center gap-2 py-2 text-xs font-semibold text-maroon">
                   <RefreshCw className="w-4 h-4 animate-spin" />
                   <span>Recording checkin with server...</span>
-                </div>
-              )}
-
-              {/* Demo Scan Button (shown when demoMode is true) */}
-              {demoMode && (
-                <div className="pt-2 border-t border-stone-200">
-                  <button
-                    type="button"
-                    onClick={handleDemoCheckin}
-                    disabled={loading}
-                    className="w-full py-3 px-4 bg-amber-400 hover:bg-amber-500 text-stone-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition-colors border border-amber-500"
-                  >
-                    <Sparkles className="w-4 h-4 text-maroon" />
-                    <span>
-                      {expectedPoint === 'in'
-                        ? 'QR scanned — done (demo)'
-                        : 'QR scanned — exit done (demo)'}
-                    </span>
-                  </button>
-                  <p className="text-[10px] text-stone-500 text-center mt-1.5">
-                    Laptop demo: records gate poster checkin without camera view
-                  </p>
                 </div>
               )}
             </div>
